@@ -1,0 +1,54 @@
+services:
+  # 1. Base de datos PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: supportflow-prod-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_DB: supportflow
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d supportflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  # 2. Corredor de migraciones automático de Prisma (se apaga una vez finalizado)
+  migration:
+    build:
+      context: .
+      target: builder
+    container_name: supportflow-prod-migration
+    command: npx prisma migrate deploy
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres_password@db:5432/supportflow?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # 3. Aplicación web de Next.js
+  web:
+    build:
+      context: .
+      target: runner
+    container_name: supportflow-prod-web
+    ports:
+      - "80:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres_password@db:5432/supportflow?schema=public
+      - NEXTAUTH_SECRET=supportflow-manager-production-very-secure-key-9988
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost}
+    depends_on:
+      db:
+        condition: service_healthy
+      migration:
+        condition: service_completed_successfully
+    restart: always
+
+volumes:
+  pgdata:
