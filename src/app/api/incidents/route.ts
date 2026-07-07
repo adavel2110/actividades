@@ -11,6 +11,12 @@ export async function GET(request: NextRequest) {
   const categoryId = searchParams.get("categoryId");
   const status = searchParams.get("status");
   const userId = searchParams.get("userId");
+  const startDate = searchParams.get("startDate");
+  const endDate = searchParams.get("endDate");
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+  const limit = Math.max(1, Math.min(100, parseInt(searchParams.get("limit") || "5")));
+  const sort = searchParams.get("sort") || "date";
+  const order = searchParams.get("order") || "desc";
   const isAdmin = (session.user as any).role === "Admin";
 
   const where: any = {};
@@ -18,14 +24,24 @@ export async function GET(request: NextRequest) {
   if (isAdmin && userId) where.userId = userId;
   if (categoryId) where.categoryId = categoryId;
   if (status) where.status = status;
+  if (startDate || endDate) {
+    where.date = {};
+    if (startDate) where.date.gte = new Date(startDate);
+    if (endDate) where.date.lte = new Date(endDate);
+  }
 
-  const incidents = await db.incident.findMany({
-    where,
-    include: { category: true, user: { select: { id: true, name: true, email: true } } },
-    orderBy: { date: "desc" },
-  });
+  const [data, total] = await Promise.all([
+    db.incident.findMany({
+      where,
+      include: { category: true, user: { select: { id: true, name: true, email: true } } },
+      orderBy: { [sort]: order },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    db.incident.count({ where }),
+  ]);
 
-  return NextResponse.json(incidents);
+  return NextResponse.json({ data, total, page, limit, totalPages: Math.ceil(total / limit) });
 }
 
 export async function POST(request: NextRequest) {

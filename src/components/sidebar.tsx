@@ -3,11 +3,12 @@
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Layers, LayoutDashboard, Ticket, FolderTree, Users, Shield, LogOut } from "lucide-react";
+import { Layers, LayoutDashboard, Ticket, FolderTree, Users, Shield, LogOut, FileText } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
   { href: "/incidents", label: "Incidencias", icon: Ticket, adminOnly: false },
+  { href: "/incidents/report", label: "Reportes", icon: FileText, adminOnly: false },
   { href: "/categories", label: "Categorías", icon: FolderTree, adminOnly: true },
   { href: "/users", label: "Usuarios", icon: Users, adminOnly: true },
   { href: "/roles", label: "Roles", icon: Shield, adminOnly: true },
