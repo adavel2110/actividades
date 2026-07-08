@@ -18,6 +18,7 @@ npm run prisma:migrate       # prisma migrate dev (dev only)
 npx prisma migrate deploy    # apply migrations in production
 npx prisma db seed           # seed: npx tsx prisma/seed.ts
 npm run dev:db               # docker compose up -d (start PostgreSQL)
+npm install html2pdf.js      # PDF export dependency (already installed)
 ```
 
 ## Project structure
@@ -28,19 +29,20 @@ npm run dev:db               # docker compose up -d (start PostgreSQL)
 | `src/lib/auth.ts` | NextAuth config (Credentials + JWT + role in token/session) |
 | `src/lib/db.ts` | PrismaClient singleton |
 | `src/lib/utils.ts` | `cn()` helper (clsx + tailwind-merge) |
-| `src/middleware.ts` | Protects `/dashboard`, `/incidents`, `/categories`, `/users`, `/roles` |
-| `src/components/sidebar.tsx` | Sidebar nav (Reportes link added, admin items conditionally shown) |
+| `src/middleware.ts` | Protects `/dashboard`, `/incidents`, `/categories`, `/users`, `/roles`, `/profile` |
+| `src/components/sidebar.tsx` | Sidebar nav (Reportes link, user name clickable → /profile, admin items conditionally shown) |
 
 ## Pages & access
 | Route | Access | Description |
 |-------|--------|-------------|
 | `/` | Public | Login page |
-| `/dashboard` | Auth | Stats cards + category bars |
+| `/dashboard` | Auth | Stats cards + category bars (admin can filter by user) |
 | `/incidents` | Auth | List with pagination (5/page), sort asc/desc, filter by user |
 | `/incidents/new` | Auth | Create form (endDate, place fields) |
 | `/incidents/[id]` | Auth | Detail view (shows endDate, place) |
 | `/incidents/[id]/edit` | Auth | Edit form (admin can reassign) |
-| `/incidents/report` | Auth | Two report types: Informe Semanal (carta) + Reporte de Incidencias (tabla), date/user filter, WhatsApp counts (optional), print button |
+| `/incidents/report` | Auth | Two report types: Informe Semanal (carta) + Reporte de Incidencias (tabla), date/user filter, WhatsApp counts (optional), PDF export + print button |
+| `/profile` | Auth | Update name, email, and password |
 | `/categories` | Admin | CRUD categories |
 | `/users` | Admin | CRUD users |
 | `/roles` | Admin | CRUD roles |
@@ -58,6 +60,7 @@ npm run dev:db               # docker compose up -d (start PostgreSQL)
 | `/api/users/[id]` | PUT, DELETE | Admin | |
 | `/api/roles` | GET, POST | Admin | |
 | `/api/roles/[id]` | PUT, DELETE | Admin | |
+| `/api/profile` | PUT | Auth | Update own name, email, password |
 
 ## Docker production deploy
 ```sh
@@ -78,8 +81,8 @@ NEXTAUTH_URL must always be set explicitly at deploy time. Never hardcode in .en
 | `userId` | String | FK to User (creator) |
 
 ## Report types (`/incidents/report`)
-1. **Informe Semanal (carta):** Formal letter with "De:", "Asunto:", intro paragraph, ticket breakdown by category, WhatsApp attention section (manually entered), closing, signature. Printable.
-2. **Reporte de Incidencias (tabla):** Full table with #, date, category, reportedBy, place, description, status. Printable.
+1. **Informe Semanal (carta):** Formal letter with "De:", "Asunto:", intro paragraph, ticket breakdown by category, WhatsApp attention section (manually entered), closing, signature. Printable + PDF export.
+2. **Reporte de Incidencias (tabla):** Full table with #, date, category, reportedBy, place, description, status. Printable + PDF export.
 
 ## Known gotchas
 1. `migration` service uses `target: builder`, runs full `next build` just to run `prisma migrate deploy`. Slow.
@@ -88,6 +91,7 @@ NEXTAUTH_URL must always be set explicitly at deploy time. Never hardcode in .en
 4. Port 80 requires root; change to high port (`"3000:3000"`) if needed.
 5. No initial migration committed. Run `npx prisma migrate dev --name init` locally before first prod deploy.
 6. OpenSSL warning in Docker is non-blocking; app works.
+7. Port 5432 may conflict with other Postgres instances; already changed to 5433 in docker-compose.prod.yml.
 
 ## Local dev
 ```sh

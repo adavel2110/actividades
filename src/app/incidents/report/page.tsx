@@ -5,6 +5,10 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/sidebar";
 
+declare global {
+  interface Window { html2pdf: any; }
+}
+
 const statusLabels: Record<string, string> = {
   PENDIENTE: "Pendiente", EN_PROCESO: "En Proceso", PROCESADO: "Procesado",
   CANCELADO: "Cancelado", RECHAZADO: "Rechazado", DERIVADO: "Derivado",
@@ -59,6 +63,30 @@ export default function ReportPage() {
 
   const handlePrint = () => window.print();
 
+  const exportPdf = () => {
+    const el = printRef.current;
+    if (!el) return;
+    const isLetter = reportType === "letter";
+    const opt = {
+      margin: 0,
+      filename: `reporte-incidencias${startDate ? `-${startDate}` : ""}${endDate ? `-${endDate}` : ""}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: "in", format: "a4", orientation: isLetter ? ("portrait" as any) : ("landscape" as any) },
+      pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+    };
+    const orig = el.className;
+    el.className = "bg-white text-black text-xs leading-snug p-2";
+    if (window.html2pdf) {
+      window.html2pdf().set(opt).from(el).save().then(() => { el.className = orig; });
+    } else {
+      const script = document.createElement("script");
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+      script.onload = () => window.html2pdf().set(opt).from(el).save().then(() => { el.className = orig; });
+      document.body.appendChild(script);
+    }
+  };
+
   const catCounts: Record<string, number> = {};
   let total = 0;
   for (const inc of results) {
@@ -70,7 +98,7 @@ export default function ReportPage() {
   const selectedUser = userId ? users.find(u => u.id === userId) : null;
   const fStart = startDate ? new Date(startDate).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" }) : "";
   const fEnd = endDate ? new Date(endDate).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" }) : "";
-  const fStartShort = startDate ? new Date(startDate).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+  const fStartShort = startDate ? new Date(startDate).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" }) : "";
   const fEndShort = endDate ? new Date(endDate).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" }) : "";
 
   return (
@@ -184,7 +212,13 @@ export default function ReportPage() {
 
         {loaded && (
           <>
-            <div className="flex justify-end mt-6 mb-4 print:hidden">
+            <div className="flex justify-end gap-3 mt-6 mb-4 print:hidden">
+              <button
+                onClick={exportPdf}
+                className="bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-medium py-2.5 px-5 rounded-xl transition-all"
+              >
+                Exportar PDF
+              </button>
               <button
                 onClick={handlePrint}
                 className="bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium py-2.5 px-5 rounded-xl transition-all"
@@ -194,8 +228,8 @@ export default function ReportPage() {
             </div>
 
             {reportType === "letter" ? (
-              <div ref={printRef} className="bg-white text-black rounded-2xl p-10 mt-4 print:rounded-none print:p-6 print:shadow-none shadow-lg text-sm leading-relaxed">
-                <p className="text-right text-gray-700 font-medium mb-6">
+              <div ref={printRef} className="bg-white text-black rounded-2xl p-5 mt-4 print:rounded-none print:p-3 print:shadow-none shadow-lg">
+                <p className="text-right text-gray-700 font-medium mb-4">
                   {fEnd || "Fecha"}
                 </p>
 
@@ -203,11 +237,11 @@ export default function ReportPage() {
                   <strong>De:</strong> {analystName}, Analista de Soporte de Apps (Modalidad Remota)
                 </p>
 
-                <p className="text-gray-700 mb-6">
+                <p className="text-gray-700 mb-4">
                   <strong>Asunto:</strong> Informe de actividades realizadas{startDate ? ` del ${fStart}` : ""}{endDate ? ` al ${fEnd}` : ""}{selectedUser ? ` — ${selectedUser.name}` : ""}
                 </p>
 
-                <p className="text-gray-700 mb-4 text-justify">
+                <p className="text-gray-700 mb-3 text-justify">
                   Por medio de la presente, informo sobre las labores ejecutadas durante la semana comprendida{startDate ? ` entre el ${fStart}` : ""}{endDate ? ` y el ${fEnd}` : ""} de 2026, período en el cual he laborado de manera remota tras el sismo ocurrido en el país, con el fin de garantizar la continuidad operativa.
                 </p>
 
@@ -215,15 +249,15 @@ export default function ReportPage() {
                   A continuación, el detalle de las gestiones realizadas:
                 </p>
 
-                <p className="text-gray-700 mb-2">
+                <p className="text-gray-700 mb-1">
                   <strong>1. Gestión de tickets a través de GLPI</strong>
                 </p>
 
-                <p className="text-gray-700 mb-2">
+                <p className="text-gray-700 mb-1">
                   Se resolvieron un total de <strong>{total}</strong> casos, desglosados de la siguiente manera:
                 </p>
 
-                <ul className="list-disc pl-8 mb-4 text-gray-700 space-y-1">
+                <ul className="list-disc pl-8 mb-3 text-gray-700 space-y-0.5">
                   {Object.entries(catCounts).map(([cat, count]) => {
                     let desc;
                     const cl = cat.toLowerCase();
@@ -238,18 +272,18 @@ export default function ReportPage() {
                   })}
                 </ul>
 
-                <p className="text-gray-700 mb-2">
+                <p className="text-gray-700 mb-1">
                   <strong>2. Atención a través del número de WhatsApp de soporte</strong>
                 </p>
 
                 {Number(whatsappPlay) + Number(whatsappConectividad) > 0 ? (
                   <>
-                    <p className="text-gray-700 mb-2">
+                    <p className="text-gray-700 mb-1">
                       Se respondieron aproximadamente{" "}
                       <strong>{Number(whatsappPlay) + Number(whatsappConectividad)} mensajes</strong>,
                       distribuidos así:
                     </p>
-                    <ul className="list-disc pl-8 mb-4 text-gray-700 space-y-1">
+                    <ul className="list-disc pl-8 mb-3 text-gray-700 space-y-0.5">
                       {Number(whatsappPlay) > 0 && (
                         <li>
                           <strong>{whatsappPlay}</strong> {Number(whatsappPlay) === 1 ? "caso" : "casos"}{" "}
@@ -265,17 +299,17 @@ export default function ReportPage() {
                     </ul>
                   </>
                 ) : (
-                  <p className="text-gray-700 mb-4 text-justify">
+                  <p className="text-gray-700 mb-3 text-justify">
                     No se reportaron atenciones por WhatsApp durante el período.
                   </p>
                 )}
 
-                <p className="text-gray-700 mb-4 text-justify">
+                <p className="text-gray-700 mb-3 text-justify">
                   Sin más nada que agregar, quedo atento a cualquier requerimiento o ampliación de la información. Reitero mi compromiso con la operación a pesar de las contingencias.
                 </p>
 
-                <p className="text-gray-700 mb-1 mt-10">Atentamente,</p>
-                <p className="text-gray-800 font-semibold text-base mt-6">{analystName}</p>
+                <p className="text-gray-700 mb-1 mt-6">Atentamente,</p>
+                <p className="text-gray-800 font-semibold text-base mt-4">{analystName}</p>
                 <p className="text-gray-600">Analista de Soporte de Apps (Modalidad Remota)</p>
 
                 <div className="text-center text-xs text-gray-400 mt-8 print:mt-6 print:text-[9px]">
@@ -283,8 +317,8 @@ export default function ReportPage() {
                 </div>
               </div>
             ) : (
-              <div ref={printRef} className="bg-white text-black rounded-2xl p-8 mt-4 print:rounded-none print:p-4 print:shadow-none shadow-lg">
-                <div className="text-center mb-6 print:mb-4">
+              <div ref={printRef} className="bg-white text-black rounded-2xl p-4 mt-4 print:rounded-none print:p-2 print:shadow-none shadow-lg">
+                  <div className="text-center mb-4 print:mb-2">
                   <h2 className="text-xl font-bold text-gray-900">Reporte de Incidencias</h2>
                   <p className="text-sm text-gray-500 mt-1">
                     {startDate && `Del ${fStartShort}`}
@@ -301,6 +335,8 @@ export default function ReportPage() {
                       <tr className="border-b-2 border-gray-300">
                         <th className="text-left py-2 px-2 font-semibold text-gray-700">#</th>
                         <th className="text-left py-2 px-2 font-semibold text-gray-700">Fecha</th>
+                        <th className="text-left py-2 px-2 font-semibold text-gray-700">Hora Ini</th>
+                        <th className="text-left py-2 px-2 font-semibold text-gray-700">Hora Fin</th>
                         <th className="text-left py-2 px-2 font-semibold text-gray-700">Categoría</th>
                         <th className="text-left py-2 px-2 font-semibold text-gray-700">Reportó</th>
                         <th className="text-left py-2 px-2 font-semibold text-gray-700">Lugar</th>
@@ -314,8 +350,18 @@ export default function ReportPage() {
                           <td className="py-2 px-2 text-gray-600 align-top">{i + 1}</td>
                           <td className="py-2 px-2 text-gray-800 align-top whitespace-nowrap">
                             {new Date(inc.date).toLocaleDateString("es-ES", {
-                              day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+                              day: "numeric", month: "short", year: "numeric",
                             })}
+                          </td>
+                          <td className="py-2 px-2 text-gray-800 align-top whitespace-nowrap">
+                            {new Date(inc.date).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                          </td>
+                          <td className="py-2 px-2 text-gray-800 align-top whitespace-nowrap">
+                            {inc.endDate
+                              ? new Date(inc.endDate).toLocaleString("es-ES", {
+                                  day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+                                })
+                              : "—"}
                           </td>
                           <td className="py-2 px-2 text-gray-800 align-top">{inc.category?.name}</td>
                           <td className="py-2 px-2 text-gray-800 align-top">{inc.reportedBy}</td>
@@ -328,7 +374,7 @@ export default function ReportPage() {
                   </table>
                 )}
 
-                <div className="text-center text-xs text-gray-400 mt-6 print:mt-4">
+                <div className="text-center text-xs text-gray-400 mt-4 print:mt-2">
                   Generado el {new Date().toLocaleString("es-ES")}
                 </div>
               </div>

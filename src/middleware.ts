@@ -7,5 +7,6 @@ export const config = {
     "/categories/:path*",
     "/users/:path*",
     "/roles/:path*",
+    "/profile/:path*",
   ],
 };

@@ -36,15 +36,31 @@ export default function DashboardPage() {
   const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState<any[]>([]);
+  const [filterUserId, setFilterUserId] = useState("");
+  const isAdmin = (session?.user as any)?.role === "Admin";
+
+  const loadStats = (userId: string) => {
+    setLoading(true);
+    const params = userId ? `?userId=${userId}` : "";
+    fetch(`/api/dashboard/stats${params}`)
+      .then((r) => r.json())
+      .then(setStats)
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/");
     if (status !== "authenticated") return;
-    fetch("/api/dashboard/stats")
-      .then((r) => r.json())
-      .then(setStats)
-      .finally(() => setLoading(false));
-  }, [status, router]);
+    if (isAdmin) fetch("/api/users").then(r => r.json()).then(setUsers);
+    loadStats("");
+  }, [status, router, isAdmin]);
+
+  const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    setFilterUserId(val);
+    loadStats(val);
+  };
 
   if (status === "loading" || loading) {
     return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-400">Cargando...</div>;
@@ -56,8 +72,24 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-slate-900 flex">
       <Sidebar />
       <main className="flex-1 p-6 md:p-8 overflow-auto">
-        <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
-        <p className="text-slate-400 text-sm mb-8">Resumen de incidencias</p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
+            <p className="text-slate-400 text-sm">Resumen de incidencias</p>
+          </div>
+          {isAdmin && users.length > 0 && (
+            <select
+              value={filterUserId}
+              onChange={handleUserChange}
+              className="bg-slate-950 border border-slate-800 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            >
+              <option value="">Todos los usuarios</option>
+              {users.map((u: any) => (
+                <option key={u.id} value={u.id}>{u.name}</option>
+              ))}
+            </select>
+          )}
+        </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
           {stats?.byStatus.map((s) => {

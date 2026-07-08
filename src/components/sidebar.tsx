@@ -1,9 +1,9 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Layers, LayoutDashboard, Ticket, FolderTree, Users, Shield, LogOut, FileText } from "lucide-react";
+import { Layers, LayoutDashboard, Ticket, FolderTree, Users, Shield, LogOut, FileText, UserCircle } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
@@ -17,6 +17,7 @@ const navItems = [
 export default function Sidebar() {
   const { data: session } = useSession();
   const pathname = usePathname();
+  const router = useRouter();
   const isAdmin = (session?.user as any)?.role === "Admin";
 
   return (
@@ -55,9 +56,15 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-3 border-t border-slate-800">
-        <div className="px-3 py-2 mb-2">
-          <p className="text-xs font-medium text-slate-300 truncate">{session?.user?.name}</p>
-          <p className="text-[10px] text-slate-500 truncate">{(session?.user as any)?.role}</p>
+        <div
+          onClick={() => router.push("/profile")}
+          className="flex items-center gap-3 px-3 py-2.5 mb-1 rounded-xl text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-all cursor-pointer"
+        >
+          <UserCircle className="w-5 h-5 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-xs font-medium truncate">{session?.user?.name}</p>
+            <p className="text-[10px] text-slate-500 truncate">{(session?.user as any)?.role}</p>
+          </div>
         </div>
         <button
           onClick={() => signOut({ callbackUrl: "/" })}
