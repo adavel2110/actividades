@@ -24,12 +24,12 @@ npm install html2pdf.js      # PDF export dependency (already installed)
 ## Project structure
 | Path | Purpose |
 |------|---------|
-| `prisma/schema.prisma` | DB schema: User, Role, Category, Incident (IncidentStatus enum, endDate, place) |
+| `prisma/schema.prisma` | DB schema: User, Role, Category, Incident, EmailRequest (IncidentStatus, EmailStatus enums) |
 | `prisma/seed.ts` | Demos: admin@incidencias.com/admin123, carlos@incidencias.com/esp123, ana@incidencias.com/esp123 |
 | `src/lib/auth.ts` | NextAuth config (Credentials + JWT + role in token/session) |
 | `src/lib/db.ts` | PrismaClient singleton |
 | `src/lib/utils.ts` | `cn()` helper (clsx + tailwind-merge) |
-| `src/middleware.ts` | Protects `/dashboard`, `/incidents`, `/categories`, `/users`, `/roles`, `/profile` |
+| `src/middleware.ts` | Protects `/dashboard`, `/incidents`, `/categories`, `/users`, `/roles`, `/profile`, `/emails` |
 | `src/components/sidebar.tsx` | Sidebar nav (Reportes link, user name clickable → /profile, admin items conditionally shown) |
 
 ## Pages & access
@@ -46,6 +46,7 @@ npm install html2pdf.js      # PDF export dependency (already installed)
 | `/categories` | Admin | CRUD categories |
 | `/users` | Admin | CRUD users |
 | `/roles` | Admin | CRUD roles |
+| `/emails` | Admin | Control de solicitudes de correo (quien solicita, dominio, nombres, apellidos, cedula, departamento, estatus, descripcion) |
 
 ## API routes
 | Route | Methods | Access | Notes |
@@ -61,6 +62,8 @@ npm install html2pdf.js      # PDF export dependency (already installed)
 | `/api/roles` | GET, POST | Admin | |
 | `/api/roles/[id]` | PUT, DELETE | Admin | |
 | `/api/profile` | PUT | Auth | Update own name, email, password |
+| `/api/emails` | GET, POST | GET=auth, POST=admin | EmailRequest CRUD |
+| `/api/emails/[id]` | GET, PUT, DELETE | Admin | |
 
 ## Docker production deploy
 ```sh
@@ -80,12 +83,25 @@ NEXTAUTH_URL must always be set explicitly at deploy time. Never hardcode in .en
 | `categoryId` | String | FK to Category |
 | `userId` | String | FK to User (creator) |
 
+## EmailRequest fields
+| Field | Type | Notes |
+|-------|------|-------|
+| `requester` | String | Required, who requested the email |
+| `domain` | String? | Optional, email domain |
+| `firstName` | String | Required, first name |
+| `lastName` | String | Required, last name |
+| `cedula` | String | Required, ID number |
+| `department` | String | Required, department |
+| `status` | EmailStatus | PENDIENTE, EN_PROCESO, COMPLETADO, CANCELADO |
+| `description` | Text | Required, details of the request |
+| `createdAt` | DateTime | Auto-generated |
+
 ## Report types (`/incidents/report`)
 1. **Informe Semanal (carta):** Formal letter with "De:", "Asunto:", intro paragraph, ticket breakdown by category, WhatsApp attention section (manually entered), closing, signature. Printable + PDF export.
 2. **Reporte de Incidencias (tabla):** Full table with #, date, category, reportedBy, place, description, status. Printable + PDF export.
 
 ## Auth model
-- Middleware (`src/middleware.ts`) only checks login — does **not** enforce roles. Admin routes (`/categories`, `/users`, `/roles`) are protected per-handler via `(session.user as any).role === "Admin"` checks in API routes.
+- Middleware (`src/middleware.ts`) only checks login — does **not** enforce roles. Admin routes (`/categories`, `/users`, `/roles`, `/emails`) are protected per-handler via `(session.user as any).role === "Admin"` checks in API routes.
 - Session/role types are not extended — all role access uses `(session.user as any).role` type casts. If you add typed session fields, update both `auth.ts` callbacks and every consumer.
 
 ## Known gotchas

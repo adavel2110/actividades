@@ -71,3 +71,26 @@ model Incident {
 
   @@map("incidents")
 }
+
+enum EmailStatus {
+  PENDIENTE
+  EN_PROCESO
+  COMPLETADO
+  CANCELADO
+}
+
+model EmailRequest {
+  id          String      @id @default(uuid()) @db.Uuid
+  requester   String
+  domain      String?
+  firstName   String      @map("first_name")
+  lastName    String      @map("last_name")
+  cedula      String
+  department  String
+  status      EmailStatus @default(PENDIENTE)
+  description String      @db.Text
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  @@map("email_requests")
+}

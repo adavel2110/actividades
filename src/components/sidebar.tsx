@@ -3,7 +3,7 @@
 import { useSession, signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Layers, LayoutDashboard, Ticket, FolderTree, Users, Shield, LogOut, FileText, UserCircle } from "lucide-react";
+import { Layers, LayoutDashboard, Ticket, FolderTree, Users, Shield, LogOut, FileText, UserCircle, Mail } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
@@ -12,6 +12,7 @@ const navItems = [
   { href: "/categories", label: "Categorías", icon: FolderTree, adminOnly: true },
   { href: "/users", label: "Usuarios", icon: Users, adminOnly: true },
   { href: "/roles", label: "Roles", icon: Shield, adminOnly: true },
+  { href: "/emails", label: "Correos", icon: Mail, adminOnly: true },
 ];
 
 export default function Sidebar() {
