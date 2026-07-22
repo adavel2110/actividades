@@ -84,6 +84,10 @@ NEXTAUTH_URL must always be set explicitly at deploy time. Never hardcode in .en
 1. **Informe Semanal (carta):** Formal letter with "De:", "Asunto:", intro paragraph, ticket breakdown by category, WhatsApp attention section (manually entered), closing, signature. Printable + PDF export.
 2. **Reporte de Incidencias (tabla):** Full table with #, date, category, reportedBy, place, description, status. Printable + PDF export.
 
+## Auth model
+- Middleware (`src/middleware.ts`) only checks login — does **not** enforce roles. Admin routes (`/categories`, `/users`, `/roles`) are protected per-handler via `(session.user as any).role === "Admin"` checks in API routes.
+- Session/role types are not extended — all role access uses `(session.user as any).role` type casts. If you add typed session fields, update both `auth.ts` callbacks and every consumer.
+
 ## Known gotchas
 1. `migration` service uses `target: builder`, runs full `next build` just to run `prisma migrate deploy`. Slow.
 2. Next.js standalone strips `.prisma/client/`. Dockerfile copies it separately and sets `PRISMA_QUERY_ENGINE_LIBRARY`.
@@ -92,6 +96,7 @@ NEXTAUTH_URL must always be set explicitly at deploy time. Never hardcode in .en
 5. No initial migration committed. Run `npx prisma migrate dev --name init` locally before first prod deploy.
 6. OpenSSL warning in Docker is non-blocking; app works.
 7. Port 5432 may conflict with other Postgres instances; already changed to 5433 in docker-compose.prod.yml.
+8. **No test suite exists.** No test framework is configured — `npm test` is not defined. Don't look for test files.
 
 ## Local dev
 ```sh
