@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/sidebar";
-import { Plus, Search, AlertCircle, CheckCircle2, Clock, RefreshCw, XCircle, ArrowRight, Eye, Pencil, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
+import { Plus, AlertCircle, CheckCircle2, Clock, RefreshCw, XCircle, ArrowRight, Eye, Pencil, ChevronLeft, ChevronRight, ArrowUpDown, X } from "lucide-react";
 
 const statusColors: Record<string, string> = {
   PENDIENTE: "bg-amber-500/10 text-amber-400 border-amber-500/20",
@@ -32,27 +32,33 @@ export default function IncidentsPage() {
   const [order, setOrder] = useState("desc");
   const [users, setUsers] = useState<any[]>([]);
   const [filterUser, setFilterUser] = useState("");
+  const [filterStart, setFilterStart] = useState("");
+  const [filterEnd, setFilterEnd] = useState("");
   const [loading, setLoading] = useState(true);
   const isAdmin = (session?.user as any)?.role === "Admin";
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/");
     if (status !== "authenticated") return;
-    if (isAdmin) fetch("/api/users").then(r => r.json()).then(setUsers);
+    if (isAdmin) fetch("/api/users?limit=100").then(r => r.json()).then(json => setUsers(json.data || []));
     fetchIncidents();
   }, [status, router]);
 
-  const fetchIncidents = async (overrides?: { p?: number; u?: string; s?: string; o?: string }) => {
+  const fetchIncidents = async (overrides?: { p?: number; u?: string; s?: string; o?: string; sd?: string; ed?: string }) => {
     const p = overrides?.p ?? page;
     const u = overrides?.u ?? filterUser;
     const s = overrides?.s ?? sort;
     const o = overrides?.o ?? order;
+    const sd = overrides?.sd ?? filterStart;
+    const ed = overrides?.ed ?? filterEnd;
     const params = new URLSearchParams();
     params.set("page", String(p));
     params.set("limit", String(limit));
     params.set("sort", s);
     params.set("order", o);
     if (u) params.set("userId", u);
+    if (sd) params.set("startDate", sd);
+    if (ed) params.set("endDate", ed);
     const res = await fetch(`/api/incidents?${params}`);
     const json = await res.json();
     setIncidents(json.data || []);
@@ -61,11 +67,18 @@ export default function IncidentsPage() {
     setLoading(false);
   };
 
-  const handleFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleFilterUser = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
     setFilterUser(val);
     setPage(1);
     fetchIncidents({ p: 1, u: val });
+  };
+
+  const handleFilterDate = (type: "start" | "end", value: string) => {
+    if (type === "start") setFilterStart(value);
+    else setFilterEnd(value);
+    setPage(1);
+    fetchIncidents({ p: 1, sd: type === "start" ? value : filterStart, ed: type === "end" ? value : filterEnd });
   };
 
   const handleOrder = () => {
@@ -75,10 +88,20 @@ export default function IncidentsPage() {
     fetchIncidents({ p: 1, o: newOrder });
   };
 
+  const clearFilters = () => {
+    setFilterUser("");
+    setFilterStart("");
+    setFilterEnd("");
+    setPage(1);
+    fetchIncidents({ p: 1, u: "", sd: "", ed: "" });
+  };
+
   const goToPage = (p: number) => {
     setPage(p);
     fetchIncidents({ p });
   };
+
+  const hasFilters = filterUser || filterStart || filterEnd;
 
   if (status === "loading") {
     return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-400">Cargando...</div>;
@@ -106,7 +129,7 @@ export default function IncidentsPage() {
           {isAdmin && users.length > 0 && (
             <select
               value={filterUser}
-              onChange={handleFilter}
+              onChange={handleFilterUser}
               className="bg-slate-950 border border-slate-800 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
               <option value="">Todos los usuarios</option>
@@ -116,14 +139,39 @@ export default function IncidentsPage() {
             </select>
           )}
 
+          <input
+            type="date"
+            value={filterStart}
+            onChange={e => handleFilterDate("start", e.target.value)}
+            className="bg-slate-950 border border-slate-800 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            title="Fecha desde"
+          />
+          <input
+            type="date"
+            value={filterEnd}
+            onChange={e => handleFilterDate("end", e.target.value)}
+            className="bg-slate-950 border border-slate-800 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            title="Fecha hasta"
+          />
+
+          <button
+            onClick={handleOrder}
+            className="bg-slate-950 border border-slate-800 rounded-xl py-2.5 px-4 text-sm text-slate-300 hover:text-white flex items-center gap-2 transition-all"
+            title={order === "desc" ? "Más recientes primero" : "Más antiguos primero"}
+          >
+            <ArrowUpDown className="w-4 h-4" />
+            {order === "desc" ? "Más recientes" : "Más antiguos"}
+          </button>
+
+          {hasFilters && (
             <button
-              onClick={handleOrder}
-              className="bg-slate-950 border border-slate-800 rounded-xl py-2.5 px-4 text-sm text-slate-300 hover:text-white flex items-center gap-2 transition-all"
-              title={order === "desc" ? "Más recientes primero" : "Más antiguos primero"}
+              onClick={clearFilters}
+              className="bg-slate-950 border border-slate-800 rounded-xl py-2.5 px-4 text-sm text-slate-300 hover:text-red-400 flex items-center gap-2 transition-all"
             >
-              <ArrowUpDown className="w-4 h-4" />
-              {order === "desc" ? "Más recientes" : "Más antiguos"}
+              <X className="w-4 h-4" />
+              Limpiar filtros
             </button>
+          )}
         </div>
 
         {loading ? (

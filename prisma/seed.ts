@@ -4,6 +4,14 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
+  if (process.env.ALLOW_SEED !== "true") {
+    console.error("⛔ Seeder abortado: define ALLOW_SEED=true para ejecutar.");
+    console.error("   Este comando BORRA TODOS LOS DATOS existentes.");
+    console.error("   Ejemplo: ALLOW_SEED=true npx prisma db seed");
+    process.exit(1);
+  }
+
+  console.log("⚠️  Borrando datos existentes...");
   await prisma.incident.deleteMany({});
   await prisma.category.deleteMany({});
   await prisma.user.deleteMany({});

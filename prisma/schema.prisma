@@ -15,6 +15,7 @@ model User {
   roleId    String    @map("role_id") @db.Uuid
   role      Role      @relation(fields: [roleId], references: [id])
   incidents Incident[]
+  emails    EmailRequest[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -70,4 +71,58 @@ model Incident {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("incidents")
+}
+
+enum EmailStatus {
+  PENDIENTE
+  EN_PROCESO
+  COMPLETADO
+  CANCELADO
+}
+
+model Company {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String       @unique
+  departments Department[]
+  emails      EmailRequest[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@map("companies")
+}
+
+model Department {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  companyId String    @map("company_id") @db.Uuid
+  company   Company   @relation(fields: [companyId], references: [id])
+  emails    EmailRequest[]
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@unique([name, companyId])
+  @@map("departments")
+}
+
+model EmailRequest {
+  id           String       @id @default(uuid()) @db.Uuid
+  email        String       @unique
+  requester    String
+  domain       String?
+  firstName    String       @map("first_name")
+  lastName     String       @map("last_name")
+  cedula       String
+  status       EmailStatus  @default(PENDIENTE)
+  description  String       @db.Text
+  userId       String       @map("user_id") @db.Uuid
+  user         User         @relation(fields: [userId], references: [id])
+  companyId    String?      @map("company_id") @db.Uuid
+  company      Company?     @relation(fields: [companyId], references: [id])
+  departmentId String?      @map("department_id") @db.Uuid
+  department   Department?  @relation(fields: [departmentId], references: [id])
+  fechaBaja    DateTime?    @map("fecha_baja")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  @@map("email_requests")
 }

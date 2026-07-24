@@ -63,6 +63,63 @@ export default function ReportPage() {
 
   const handlePrint = () => window.print();
 
+  const exportExcel = () => {
+    const fileName = `reporte-incidencias${startDate ? `-${startDate}` : ""}${endDate ? `-${endDate}` : ""}.xls`;
+
+    if (reportType === "letter") {
+      const rows = Object.entries(catCounts).map(([cat, count]) => [cat, count]);
+      const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+          <x:Name>Informe Semanal</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+        </x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>
+        <body><table border="1">
+          <tr><th>Informe Semanal</th><th></th></tr>
+          <tr><td>De:</td><td>${analystName}, Analista de Soporte de Apps (Modalidad Remota)</td></tr>
+          <tr><td>Asunto:</td><td>Informe de actividades realizadas${startDate ? ` del ${fStart}` : ""}${endDate ? ` al ${fEnd}` : ""}${selectedUser ? ` - ${selectedUser.name}` : ""}</td></tr>
+          <tr><td>Total de tickets:</td><td>${total}</td></tr>
+          <tr><td></td><td></td></tr>
+          <tr><th>Categor&iacute;a</th><th>Cantidad</th></tr>
+          ${rows.map(([cat, count]) => `<tr><td>${cat}</td><td>${count}</td></tr>`).join("")}
+          <tr><td></td><td></td></tr>
+          <tr><th>WhatsApp Play</th><td>${whatsappPlay}</td></tr>
+          <tr><th>WhatsApp Conectividad</th><td>${whatsappConectividad}</td></tr>
+        </table></body></html>`;
+
+      const blob = new Blob(["\uFEFF" + html], { type: "application/vnd.ms-excel" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = fileName; a.click();
+      URL.revokeObjectURL(url);
+    } else {
+      const headers = ["#", "Fecha", "Hora Ini", "Hora Fin", "Categoría", "Reportó", "Lugar", "Detalle", "Estado"];
+      const rows = results.map((inc, i) => [
+        i + 1,
+        new Date(inc.date).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" }),
+        new Date(inc.date).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
+        inc.endDate ? new Date(inc.endDate).toLocaleString("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—",
+        inc.category?.name || "",
+        inc.reportedBy,
+        inc.place || "—",
+        inc.description,
+        statusLabels[inc.status] || inc.status,
+      ]);
+      const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+          <x:Name>Reporte de Incidencias</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+        </x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>
+        <body><table border="1">
+          <tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr>
+          ${rows.map(r => `<tr>${r.map(c => `<td>${String(c).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</td>`).join("")}</tr>`).join("")}
+        </table></body></html>`;
+
+      const blob = new Blob(["\uFEFF" + html], { type: "application/vnd.ms-excel" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = fileName; a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
   const exportPdf = () => {
     const el = printRef.current;
     if (!el) return;
@@ -218,6 +275,12 @@ export default function ReportPage() {
                 className="bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-medium py-2.5 px-5 rounded-xl transition-all"
               >
                 Exportar PDF
+              </button>
+              <button
+                onClick={exportExcel}
+                className="bg-green-700 hover:bg-green-600 text-white text-sm font-medium py-2.5 px-5 rounded-xl transition-all"
+              >
+                Exportar Excel
               </button>
               <button
                 onClick={handlePrint}

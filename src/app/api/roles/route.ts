@@ -3,17 +3,27 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user || (session.user as any).role !== "Admin") {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
-  const roles = await db.role.findMany({
-    include: { _count: { select: { users: true } } },
-    orderBy: { name: "asc" },
-  });
-  return NextResponse.json(roles);
+  const { searchParams } = new URL(request.url);
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+  const limit = Math.max(1, Math.min(100, parseInt(searchParams.get("limit") || "5")));
+
+  const [data, total] = await Promise.all([
+    db.role.findMany({
+      include: { _count: { select: { users: true } } },
+      orderBy: { name: "asc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    db.role.count(),
+  ]);
+
+  return NextResponse.json({ data, total, page, limit, totalPages: Math.ceil(total / limit) });
 }
 
 export async function POST(request: NextRequest) {
