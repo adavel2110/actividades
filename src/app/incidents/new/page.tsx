@@ -23,7 +23,7 @@ export default function NewIncidentPage() {
   useEffect(() => {
     if (status === "unauthenticated") router.push("/");
     if (status !== "authenticated") return;
-    fetch("/api/categories").then(r => r.json()).then(setCategories);
+    fetch("/api/categories").then(r => r.json()).then(d => setCategories(d.data || []));
   }, [status, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {

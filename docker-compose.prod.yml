@@ -55,8 +55,8 @@ services:
       - "80:3000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres_password@db:5432/supportflow?schema=public
-      - NEXTAUTH_SECRET=supportflow-manager-production-very-secure-key-9988
-      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost}
+      - NEXTAUTH_SECRET=supportflow-manager-secure-key-32-chars-long-or-more
+      - NEXTAUTH_URL=http://10.10.30.53
     depends_on:
       db:
         condition: service_healthy

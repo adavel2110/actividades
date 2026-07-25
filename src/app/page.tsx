@@ -84,7 +84,7 @@ export default function LoginPage() {
           </button>
 
           <p className="text-xs text-slate-500 text-center pt-2">
-            Demo: admin@incidencias.com / admin123
+            Demo: correo / pass
           </p>
         </form>
       </div>
