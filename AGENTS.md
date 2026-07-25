@@ -57,7 +57,7 @@ npm install html2pdf.js      # PDF export dependency (already installed)
 | `/api/dashboard/stats` | GET | Auth | Supports `?type=incidents|emails`, `?userId=...`, `?companyId=...` |
 | `/api/incidents` | GET, POST | Auth | GET supports: page, limit, sort, order, userId, categoryId, status, startDate, endDate |
 | `/api/incidents/[id]` | GET, PUT, DELETE | Auth | Owner or admin |
-| `/api/categories` | GET, POST | GET=auth, POST=admin | |
+| `/api/categories` | GET, POST | GET=auth, POST=admin | GET returns `{ data, total, page, limit, totalPages }` |
 | `/api/categories/[id]` | PUT, DELETE | Admin | |
 | `/api/companies` | GET, POST | GET=auth, POST=admin | Company CRUD |
 | `/api/companies/[id]` | GET, PUT, DELETE | Admin | |
@@ -68,14 +68,17 @@ npm install html2pdf.js      # PDF export dependency (already installed)
 | `/api/roles` | GET, POST | Admin | |
 | `/api/roles/[id]` | PUT, DELETE | Admin | |
 | `/api/profile` | PUT | Auth | Update own name, email, password |
-| `/api/emails` | GET, POST | GET=auth, POST=admin | EmailRequest CRUD |
+| `/api/emails` | GET, POST | GET=auth, POST=admin | EmailRequest CRUD, supports `?companyId=...`, `?search=...` |
 | `/api/emails/[id]` | GET, PUT, DELETE | Admin | |
 
 ## Docker production deploy
 ```sh
-NEXTAUTH_URL=http://10.10.30.53 docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml up -d --build
 ```
-NEXTAUTH_URL must always be set explicitly at deploy time. Never hardcode in .env.
+- `NEXTAUTH_URL` is set in `docker-compose.prod.yml` (currently `http://10.10.30.53`). Update if server IP changes.
+- `NEXTAUTH_SECRET` must match the one in `.env` to avoid JWT decryption errors.
+- PostgreSQL runs on port **5433** in prod (5432 is used by local PG).
+- pgAdmin available at port **5050** (admin@admin.com / admin).
 
 ## Incident fields
 | Field | Type | Notes |
@@ -92,14 +95,18 @@ NEXTAUTH_URL must always be set explicitly at deploy time. Never hardcode in .en
 ## EmailRequest fields
 | Field | Type | Notes |
 |-------|------|-------|
+| `email` | String | Required, unique email address |
 | `requester` | String | Required, who requested the email |
 | `domain` | String? | Optional, email domain |
 | `firstName` | String | Required, first name |
 | `lastName` | String | Required, last name |
 | `cedula` | String | Required, ID number |
-| `department` | String | Required, department |
+| `companyId` | String? | FK to Company |
+| `departmentId` | String? | FK to Department |
 | `status` | EmailStatus | PENDIENTE, EN_PROCESO, COMPLETADO, CANCELADO |
 | `description` | Text | Required, details of the request |
+| `fechaBaja` | DateTime? | Optional, deletion date |
+| `userId` | String | FK to User (creator) |
 | `createdAt` | DateTime | Auto-generated |
 
 ## Report types (`/incidents/report`)
@@ -109,6 +116,7 @@ NEXTAUTH_URL must always be set explicitly at deploy time. Never hardcode in .en
 ## Auth model
 - Middleware (`src/middleware.ts`) only checks login — does **not** enforce roles. Admin routes (`/categories`, `/users`, `/roles`, `/emails`) are protected per-handler via `(session.user as any).role === "Admin"` checks in API routes.
 - Session/role types are not extended — all role access uses `(session.user as any).role` type casts. If you add typed session fields, update both `auth.ts` callbacks and every consumer.
+- Custom pages configured: `signIn: "/"`, `signOut: "/"` (login and logout redirect to root).
 
 ## Known gotchas
 1. `migration` service uses `target: builder`, runs full `next build` just to run `prisma migrate deploy`. Slow.
@@ -119,6 +127,8 @@ NEXTAUTH_URL must always be set explicitly at deploy time. Never hardcode in .en
 6. OpenSSL warning in Docker is non-blocking; app works.
 7. Port 5432 may conflict with other Postgres instances; already changed to 5433 in docker-compose.prod.yml.
 8. **No test suite exists.** No test framework is configured — `npm test` is not defined. Don't look for test files.
+9. API paginated endpoints (e.g. `/api/categories`) return `{ data, total, page, limit, totalPages }`, not a bare array. Client must extract `.data`.
+10. JWT secret mismatch between `.env` and `docker-compose.prod.yml` causes decryption errors. Always keep them in sync.
 
 ## ⚠️ PRODUCCIÓN — Protección de datos
 
