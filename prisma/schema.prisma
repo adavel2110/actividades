@@ -120,6 +120,7 @@ model EmailRequest {
   company      Company?     @relation(fields: [companyId], references: [id])
   departmentId String?      @map("department_id") @db.Uuid
   department   Department?  @relation(fields: [departmentId], references: [id])
+  fechaReg     DateTime?    @map("fecha_reg")
   fechaBaja    DateTime?    @map("fecha_baja")
   createdAt    DateTime     @default(now()) @map("created_at")
   updatedAt    DateTime     @updatedAt @map("updated_at")

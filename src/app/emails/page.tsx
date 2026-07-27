@@ -21,10 +21,10 @@ interface EmailRequest {
   cedula: string; status: string; description: string;
   companyId: string | null; departmentId: string | null;
   company: Company | null; department: Department | null;
-  fechaBaja: string | null; createdAt: string;
+  fechaReg: string | null; fechaBaja: string | null; createdAt: string;
 }
 
-const emptyForm = { email: "", requester: "", domain: "", firstName: "", lastName: "", cedula: "", status: "PENDIENTE", description: "", companyId: "", departmentId: "" };
+const emptyForm = { email: "", requester: "", domain: "", firstName: "", lastName: "", cedula: "", status: "PENDIENTE", description: "", companyId: "", departmentId: "", fechaReg: "" };
 
 export default function EmailsPage() {
   const { data: session, status } = useSession();
@@ -108,7 +108,7 @@ export default function EmailsPage() {
   async function handleCreate() {
     if (!form.email || !form.requester || !form.firstName || !form.lastName || !form.cedula || !form.description) return;
     const res = await fetch("/api/emails", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, companyId: form.companyId || null, departmentId: form.departmentId || null }) });
+      body: JSON.stringify({ ...form, companyId: form.companyId || null, departmentId: form.departmentId || null, fechaReg: form.fechaReg || null }) });
     const json = await res.json();
     if (res.ok) { setForm(emptyForm); setShowForm(false); loadEmails(1); setPage(1); }
     else if (res.status === 409) { alert(json.error); }
@@ -116,7 +116,7 @@ export default function EmailsPage() {
 
   async function handleUpdate(id: string) {
     const res = await fetch(`/api/emails/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, companyId: form.companyId || null, departmentId: form.departmentId || null }) });
+      body: JSON.stringify({ ...form, companyId: form.companyId || null, departmentId: form.departmentId || null, fechaReg: form.fechaReg || null }) });
     const json = await res.json();
     if (res.ok) { setEditing(null); setForm(emptyForm); loadEmails(); }
     else if (res.status === 409) { alert(json.error); }
@@ -132,7 +132,8 @@ export default function EmailsPage() {
   function startEdit(email: EmailRequest) {
     setEditing(email.id);
     setForm({ email: email.email, requester: email.requester, domain: email.domain || "", firstName: email.firstName, lastName: email.lastName,
-      cedula: email.cedula, status: email.status, description: email.description, companyId: email.companyId || "", departmentId: email.departmentId || "" });
+      cedula: email.cedula, status: email.status, description: email.description, companyId: email.companyId || "", departmentId: email.departmentId || "",
+      fechaReg: email.fechaReg ? new Date(email.fechaReg).toISOString().split("T")[0] : "" });
     if (email.companyId) fetch(`/api/departments?companyId=${email.companyId}&limit=100`).then(r => r.json()).then(d => setDepartments(d.data || []));
   }
 
@@ -200,6 +201,7 @@ export default function EmailsPage() {
                   <option value="">Departamento (opcional)</option>
                   {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
+                <input type="date" placeholder="Fecha de registro" value={form.fechaReg} onChange={e => setForm({ ...form, fechaReg: e.target.value })} className={inputClass} />
               </div>
               <textarea placeholder="Descripcion *" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500/50 outline-none resize-none" />
               <div className="flex gap-2">
@@ -234,6 +236,7 @@ export default function EmailsPage() {
                           <option value="">Departamento</option>
                           {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                         </select>
+                        <input type="date" value={form.fechaReg} onChange={e => setForm({ ...form, fechaReg: e.target.value })} className={inputClass} />
                       </div>
                       <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={2} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white outline-none resize-none" />
                       <div className="flex gap-2">
@@ -257,6 +260,7 @@ export default function EmailsPage() {
                         <p className="text-slate-500 text-xs">{email.description}</p>
                         <div className="flex items-center gap-2 pt-1">
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[email.status] || ""}`}>{email.status}</span>
+                          {email.fechaReg && <span className="text-slate-500 text-[10px]">Registro: {new Date(email.fechaReg).toLocaleDateString()}</span>}
                           <span className="text-slate-600 text-[10px]">Creado: {new Date(email.createdAt).toLocaleDateString()}</span>
                           {isInactive && <span className="text-red-500/60 text-[10px]">Baja: {new Date(email.fechaBaja!).toLocaleDateString()}</span>}
                         </div>

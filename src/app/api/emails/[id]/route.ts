@@ -38,6 +38,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       body.email = body.email.toLowerCase().trim();
     }
 
+    if (body.fechaReg) {
+      body.fechaReg = new Date(body.fechaReg);
+    } else if (body.fechaReg === "" || body.fechaReg === null) {
+      body.fechaReg = null;
+    }
+
     const email = await db.emailRequest.update({ where: { id: params.id }, data: body });
     return NextResponse.json(email);
   } catch {

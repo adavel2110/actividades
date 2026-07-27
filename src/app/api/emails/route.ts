@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
         userId: (session.user as any).id,
         companyId: body.companyId || null,
         departmentId: body.departmentId || null,
+        fechaReg: body.fechaReg ? new Date(body.fechaReg) : null,
       },
     });
     return NextResponse.json(email, { status: 201 });

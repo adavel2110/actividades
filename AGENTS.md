@@ -105,6 +105,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 | `departmentId` | String? | FK to Department |
 | `status` | EmailStatus | PENDIENTE, EN_PROCESO, COMPLETADO, CANCELADO |
 | `description` | Text | Required, details of the request |
+| `fechaReg` | DateTime? | Optional, registration date (user-entered) |
 | `fechaBaja` | DateTime? | Optional, deletion date |
 | `userId` | String | FK to User (creator) |
 | `createdAt` | DateTime | Auto-generated |
