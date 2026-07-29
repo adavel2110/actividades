@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/sidebar";
 import { AlertCircle, CheckCircle2, Clock, RefreshCw, XCircle, ArrowRight, ArrowLeft } from "lucide-react";
+import { TIMEZONE } from "@/lib/utils";
 
 const statusColors: Record<string, string> = {
   PENDIENTE: "bg-amber-500/10 text-amber-400 border-amber-500/20",
@@ -76,7 +77,7 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
               <span className="text-slate-500">Fecha y Hora</span>
               <p className="font-semibold mt-0.5">
                 {new Date(incident.date).toLocaleDateString("es-ES", {
-                  day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
+                  day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: TIMEZONE,
                 })}
               </p>
             </div>
@@ -85,7 +86,7 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
               <p className="font-semibold mt-0.5">
                 {incident.endDate
                   ? new Date(incident.endDate).toLocaleDateString("es-ES", {
-                      day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
+                      day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: TIMEZONE,
                     })
                   : "—"}
               </p>

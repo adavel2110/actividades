@@ -9,6 +9,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres_password
       POSTGRES_DB: supportflow
+      TZ: America/Caracas
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -41,6 +42,7 @@ services:
     command: npx prisma migrate deploy
     environment:
       - DATABASE_URL=postgresql://postgres:postgres_password@db:5432/supportflow?schema=public
+      - TZ=America/Caracas
     depends_on:
       db:
         condition: service_healthy
@@ -57,6 +59,7 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres_password@db:5432/supportflow?schema=public
       - NEXTAUTH_SECRET=supportflow-manager-secure-key-32-chars-long-or-more
       - NEXTAUTH_URL=http://10.10.30.53
+      - TZ=America/Caracas
     depends_on:
       db:
         condition: service_healthy

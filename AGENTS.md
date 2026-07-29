@@ -28,7 +28,7 @@ npm install html2pdf.js      # PDF export dependency (already installed)
 | `prisma/seed.ts` | Demos: admin@incidencias.com/admin123, carlos@incidencias.com/esp123, ana@incidencias.com/esp123 |
 | `src/lib/auth.ts` | NextAuth config (Credentials + JWT + role in token/session) |
 | `src/lib/db.ts` | PrismaClient singleton |
-| `src/lib/utils.ts` | `cn()` helper (clsx + tailwind-merge) |
+| `src/lib/utils.ts` | `cn()` helper (clsx + tailwind-merge), `getLocalISOString()`, `toLocalISOString()`, `TIMEZONE` constant |
 | `src/middleware.ts` | Protects `/dashboard`, `/incidents`, `/categories`, `/companies`, `/departments`, `/users`, `/roles`, `/profile`, `/emails` |
 | `src/components/sidebar.tsx` | Sidebar responsive (hamburger en movil/tablet, overlay, admin items conditionally shown) |
 
@@ -79,6 +79,16 @@ docker compose -f docker-compose.prod.yml up -d --build
 - `NEXTAUTH_SECRET` must match the one in `.env` to avoid JWT decryption errors.
 - PostgreSQL runs on port **5433** in prod (5432 is used by local PG).
 - pgAdmin available at port **5050** (admin@admin.com / admin).
+- **Timezone:** All containers (db, web, migration) run with `TZ=America/Caracas` (UTC-4). Dates are stored as UTC in PostgreSQL and converted to Caracas time on display.
+
+## Timezone handling
+- **Config:** `TZ=America/Caracas` is set in `Dockerfile`, `docker-compose.yml`, and `docker-compose.prod.yml`.
+- **Helpers** (`src/lib/utils.ts`):
+  - `getLocalISOString(date?)` — returns local datetime string `YYYY-MM-DDTHH:MM` (not UTC).
+  - `toLocalISOString(dateString)` — converts ISO string to local format for `<input type="datetime-local">`.
+  - `TIMEZONE = "America/Caracas"` — used in `toLocaleString("es-ES", { timeZone: TIMEZONE })` calls.
+- **Display:** All `toLocaleDateString` / `toLocaleTimeString` / `toLocaleString` calls use `{ timeZone: TIMEZONE }` for consistent Caracas time.
+- **Storage:** JS `Date` objects are sent as local time strings; Prisma stores them as UTC. On read, they are interpreted as UTC and converted to Caracas time for display.
 
 ## Incident fields
 | Field | Type | Notes |
@@ -130,6 +140,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 8. **No test suite exists.** No test framework is configured — `npm test` is not defined. Don't look for test files.
 9. API paginated endpoints (e.g. `/api/categories`) return `{ data, total, page, limit, totalPages }`, not a bare array. Client must extract `.data`.
 10. JWT secret mismatch between `.env` and `docker-compose.prod.yml` causes decryption errors. Always keep them in sync.
+11. **Timezone:** `TZ=America/Caracas` is set in Docker configs. All date display uses `{ timeZone: TIMEZONE }`. Forms use `getLocalISOString()` to avoid UTC offset issues.
 
 ## ⚠️ PRODUCCIÓN — Protección de datos
 

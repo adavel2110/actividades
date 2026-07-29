@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/sidebar";
+import { toLocalISOString } from "@/lib/utils";
 
 export default function EditIncidentPage({ params }: { params: { id: string } }) {
   const { data: session, status } = useSession();
@@ -29,26 +30,28 @@ export default function EditIncidentPage({ params }: { params: { id: string } })
     if (status !== "authenticated") return;
 
     Promise.all([
-      fetch("/api/categories").then(r => r.json()),
+      fetch("/api/categories?limit=1000").then(r => r.json()),
       fetch(`/api/incidents/${params.id}`).then(r => r.json()),
-      isAdmin ? fetch("/api/users").then(r => r.json()) : Promise.resolve([]),
+      isAdmin ? fetch("/api/users?limit=1000").then(r => r.json()) : Promise.resolve({ data: [] }),
     ]).then(([cats, inc, usrs]) => {
       if (inc.error) return router.push("/incidents");
-      setCategories(cats);
-      setUsers(usrs);
+      setCategories(cats.data || []);
+      setUsers(usrs.data || []);
       setForm({
         categoryId: inc.categoryId,
         reportedBy: inc.reportedBy,
         place: inc.place || "",
         description: inc.description,
-        date: new Date(inc.date).toISOString().slice(0, 16),
-        endDate: inc.endDate ? new Date(inc.endDate).toISOString().slice(0, 16) : "",
+        date: toLocalISOString(inc.date),
+        endDate: inc.endDate ? toLocalISOString(inc.endDate) : "",
         status: inc.status,
         userId: inc.userId,
       });
       setLoading(false);
+    }).catch(() => {
+      router.push("/incidents");
     });
-  }, [params.id, status, router]);
+  }, [params.id, status, router, isAdmin]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/sidebar";
+import { TIMEZONE } from "@/lib/utils";
 
 declare global {
   interface Window { html2pdf: any; }
@@ -41,7 +42,7 @@ export default function ReportPage() {
     if (status === "unauthenticated") router.push("/");
     if (status !== "authenticated") return;
     setAnalystName(session?.user?.name || "");
-    if (isAdmin) fetch("/api/users").then(r => r.json()).then(setUsers);
+    if (isAdmin) fetch("/api/users?limit=1000").then(r => r.json()).then(d => setUsers(d.data || []));
   }, [status, router, isAdmin, session]);
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -94,9 +95,9 @@ export default function ReportPage() {
       const headers = ["#", "Fecha", "Hora Ini", "Hora Fin", "Categoría", "Reportó", "Lugar", "Detalle", "Estado"];
       const rows = results.map((inc, i) => [
         i + 1,
-        new Date(inc.date).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" }),
-        new Date(inc.date).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
-        inc.endDate ? new Date(inc.endDate).toLocaleString("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—",
+        new Date(inc.date).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric", timeZone: TIMEZONE }),
+        new Date(inc.date).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: TIMEZONE }),
+        inc.endDate ? new Date(inc.endDate).toLocaleString("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: TIMEZONE }) : "—",
         inc.category?.name || "",
         inc.reportedBy,
         inc.place || "—",
@@ -153,10 +154,10 @@ export default function ReportPage() {
   }
 
   const selectedUser = userId ? users.find(u => u.id === userId) : null;
-  const fStart = startDate ? new Date(startDate).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" }) : "";
-  const fEnd = endDate ? new Date(endDate).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" }) : "";
-  const fStartShort = startDate ? new Date(startDate).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" }) : "";
-  const fEndShort = endDate ? new Date(endDate).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" }) : "";
+  const fStart = startDate ? new Date(startDate).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric", timeZone: TIMEZONE }) : "";
+  const fEnd = endDate ? new Date(endDate).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric", timeZone: TIMEZONE }) : "";
+  const fStartShort = startDate ? new Date(startDate).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric", timeZone: TIMEZONE }) : "";
+  const fEndShort = endDate ? new Date(endDate).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric", timeZone: TIMEZONE }) : "";
 
   return (
     <div className="min-h-screen bg-slate-900 flex">
@@ -376,7 +377,7 @@ export default function ReportPage() {
                 <p className="text-gray-600">Analista de Soporte de Apps (Modalidad Remota)</p>
 
                 <div className="text-center text-xs text-gray-400 mt-8 print:mt-6 print:text-[9px]">
-                  Generado el {new Date().toLocaleString("es-ES")}
+                  Generado el {new Date().toLocaleString("es-ES", { timeZone: TIMEZONE })}
                 </div>
               </div>
             ) : (
@@ -413,16 +414,16 @@ export default function ReportPage() {
                           <td className="py-2 px-2 text-gray-600 align-top">{i + 1}</td>
                           <td className="py-2 px-2 text-gray-800 align-top whitespace-nowrap">
                             {new Date(inc.date).toLocaleDateString("es-ES", {
-                              day: "numeric", month: "short", year: "numeric",
+                              day: "numeric", month: "short", year: "numeric", timeZone: TIMEZONE,
                             })}
                           </td>
                           <td className="py-2 px-2 text-gray-800 align-top whitespace-nowrap">
-                            {new Date(inc.date).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                            {new Date(inc.date).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: TIMEZONE })}
                           </td>
                           <td className="py-2 px-2 text-gray-800 align-top whitespace-nowrap">
                             {inc.endDate
                               ? new Date(inc.endDate).toLocaleString("es-ES", {
-                                  day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+                                  day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: TIMEZONE,
                                 })
                               : "—"}
                           </td>
@@ -438,7 +439,7 @@ export default function ReportPage() {
                 )}
 
                 <div className="text-center text-xs text-gray-400 mt-4 print:mt-2">
-                  Generado el {new Date().toLocaleString("es-ES")}
+                  Generado el {new Date().toLocaleString("es-ES", { timeZone: TIMEZONE })}
                 </div>
               </div>
             )}

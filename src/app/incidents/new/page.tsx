@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/sidebar";
+import { getLocalISOString } from "@/lib/utils";
 
 export default function NewIncidentPage() {
   const { data: session, status } = useSession();
@@ -15,7 +16,7 @@ export default function NewIncidentPage() {
     reportedBy: "",
     place: "",
     description: "",
-    date: new Date().toISOString().slice(0, 16),
+    date: getLocalISOString(),
     endDate: "",
     status: "PENDIENTE",
   });
@@ -23,7 +24,7 @@ export default function NewIncidentPage() {
   useEffect(() => {
     if (status === "unauthenticated") router.push("/");
     if (status !== "authenticated") return;
-    fetch("/api/categories").then(r => r.json()).then(d => setCategories(d.data || []));
+    fetch("/api/categories?limit=1000").then(r => r.json()).then(d => setCategories(d.data || []));
   }, [status, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {

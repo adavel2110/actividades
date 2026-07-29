@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/sidebar";
 import { Mail, Plus, Pencil, Trash2, X, Save, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { TIMEZONE } from "@/lib/utils";
 
 const STATUS_OPTIONS = ["PENDIENTE", "EN_PROCESO", "COMPLETADO", "CANCELADO"];
 const STATUS_COLORS: Record<string, string> = {
@@ -125,7 +126,7 @@ export default function EmailsPage() {
   async function handleDeactivate(id: string) {
     if (!confirm("¿Está seguro de desactivar este registro? Se marcará como dado de baja.")) return;
     const res = await fetch(`/api/emails/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fechaBaja: new Date().toISOString(), status: "CANCELADO" }) });
+      body: JSON.stringify({ fechaBaja: new Date().toLocaleString("sv-SE", { timeZone: TIMEZONE }).replace(" ", "T"), status: "CANCELADO" }) });
     if (res.ok) loadEmails();
   }
 
@@ -260,9 +261,9 @@ export default function EmailsPage() {
                         <p className="text-slate-500 text-xs">{email.description}</p>
                         <div className="flex items-center gap-2 pt-1">
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[email.status] || ""}`}>{email.status}</span>
-                          {email.fechaReg && <span className="text-slate-500 text-[10px]">Registro: {new Date(email.fechaReg).toLocaleDateString()}</span>}
-                          <span className="text-slate-600 text-[10px]">Creado: {new Date(email.createdAt).toLocaleDateString()}</span>
-                          {isInactive && <span className="text-red-500/60 text-[10px]">Baja: {new Date(email.fechaBaja!).toLocaleDateString()}</span>}
+                          {email.fechaReg && <span className="text-slate-500 text-[10px]">Registro: {new Date(email.fechaReg).toLocaleDateString("es-ES", { timeZone: TIMEZONE })}</span>}
+                          <span className="text-slate-600 text-[10px]">Creado: {new Date(email.createdAt).toLocaleDateString("es-ES", { timeZone: TIMEZONE })}</span>
+                          {isInactive && <span className="text-red-500/60 text-[10px]">Baja: {new Date(email.fechaBaja!).toLocaleDateString("es-ES", { timeZone: TIMEZONE })}</span>}
                         </div>
                       </div>
                       <div className="flex gap-1 ml-4 shrink-0">

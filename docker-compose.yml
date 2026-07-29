@@ -8,6 +8,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres_password
       POSTGRES_DB: supportflow
+      TZ: America/Caracas
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always

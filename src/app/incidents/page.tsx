@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/sidebar";
 import { Plus, AlertCircle, CheckCircle2, Clock, RefreshCw, XCircle, ArrowRight, Eye, Pencil, ChevronLeft, ChevronRight, ArrowUpDown, X } from "lucide-react";
+import { TIMEZONE } from "@/lib/utils";
 
 const statusColors: Record<string, string> = {
   PENDIENTE: "bg-amber-500/10 text-amber-400 border-amber-500/20",
@@ -206,7 +207,7 @@ export default function IncidentsPage() {
                           <span>Reportó: {inc.reportedBy}</span>
                           {inc.place && <span>Lugar: {inc.place}</span>}
                           <span>Por: {inc.user?.name}</span>
-                          <span>{new Date(inc.date).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                          <span>{new Date(inc.date).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: TIMEZONE })}</span>
                         </div>
                       </div>
                       <div className="flex gap-2 shrink-0">
