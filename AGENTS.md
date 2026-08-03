@@ -105,7 +105,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 ## EmailRequest fields
 | Field | Type | Notes |
 |-------|------|-------|
-| `email` | String | Required, unique email address |
+| `email` | String | Required, unique email address (auto-trimmed before validation & save) |
 | `requester` | String | Required, who requested the email |
 | `domain` | String? | Optional, email domain |
 | `firstName` | String | Required, first name |

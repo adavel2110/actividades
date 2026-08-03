@@ -59,20 +59,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Correo, solicitante, nombres, cedula y descripcion son requeridos" }, { status: 400 });
   }
 
+  const trimmedEmail = body.email.trim();
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(body.email)) {
+  if (!emailRegex.test(trimmedEmail)) {
     return NextResponse.json({ error: "El formato del correo no es valido" }, { status: 400 });
   }
 
   try {
-    const existing = await db.emailRequest.findUnique({ where: { email: body.email } });
+    const existing = await db.emailRequest.findUnique({ where: { email: trimmedEmail } });
     if (existing) {
       return NextResponse.json({ error: "Este correo ya esta registrado" }, { status: 409 });
     }
 
     const email = await db.emailRequest.create({
       data: {
-        email: body.email.toLowerCase().trim(),
+        email: trimmedEmail.toLowerCase(),
         requester: body.requester,
         domain: body.domain || null,
         firstName: body.firstName,

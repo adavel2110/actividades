@@ -40,6 +40,7 @@ export default function EmailsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [formError, setFormError] = useState("");
   const [filterSearch, setFilterSearch] = useState("");
   const [filterCompany, setFilterCompany] = useState("");
   const limit = 5;
@@ -108,19 +109,21 @@ export default function EmailsPage() {
 
   async function handleCreate() {
     if (!form.email || !form.requester || !form.firstName || !form.lastName || !form.cedula || !form.description) return;
+    setFormError("");
     const res = await fetch("/api/emails", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, companyId: form.companyId || null, departmentId: form.departmentId || null, fechaReg: form.fechaReg || null }) });
     const json = await res.json();
-    if (res.ok) { setForm(emptyForm); setShowForm(false); loadEmails(1); setPage(1); }
-    else if (res.status === 409) { alert(json.error); }
+    if (res.ok) { setForm(emptyForm); setShowForm(false); setFormError(""); loadEmails(1); setPage(1); }
+    else { setFormError(json.error || "Error al guardar"); }
   }
 
   async function handleUpdate(id: string) {
+    setFormError("");
     const res = await fetch(`/api/emails/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, companyId: form.companyId || null, departmentId: form.departmentId || null, fechaReg: form.fechaReg || null }) });
     const json = await res.json();
-    if (res.ok) { setEditing(null); setForm(emptyForm); loadEmails(); }
-    else if (res.status === 409) { alert(json.error); }
+    if (res.ok) { setEditing(null); setForm(emptyForm); setFormError(""); loadEmails(); }
+    else { setFormError(json.error || "Error al actualizar"); }
   }
 
   async function handleDeactivate(id: string) {
@@ -153,7 +156,7 @@ export default function EmailsPage() {
               <h1 className="text-xl font-bold text-white flex items-center gap-2"><Mail className="w-5 h-5" /> Control de Correos</h1>
               <p className="text-sm text-slate-400">{total} registros</p>
             </div>
-            <button onClick={() => { setShowForm(!showForm); setEditing(null); setForm(emptyForm); }} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm transition-all">
+            <button onClick={() => { setShowForm(!showForm); setEditing(null); setForm(emptyForm); setFormError(""); }} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm transition-all">
               <Plus className="w-4 h-4" /> Nuevo Correo
             </button>
           </div>
@@ -185,7 +188,7 @@ export default function EmailsPage() {
           {showForm && (
             <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <input placeholder="Correo electronico *" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className={inputClass} />
+                <input placeholder="Correo electronico *" value={form.email} onChange={e => { setForm({ ...form, email: e.target.value }); setFormError(""); }} className={inputClass} />
                 <input placeholder="Quien solicita *" value={form.requester} onChange={e => setForm({ ...form, requester: e.target.value })} className={inputClass} />
                 <input placeholder="Dominio" value={form.domain} onChange={e => setForm({ ...form, domain: e.target.value })} className={inputClass} />
                 <input placeholder="Nombres *" value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} className={inputClass} />
@@ -205,9 +208,10 @@ export default function EmailsPage() {
                 <input type="date" placeholder="Fecha de registro" value={form.fechaReg} onChange={e => setForm({ ...form, fechaReg: e.target.value })} className={inputClass} />
               </div>
               <textarea placeholder="Descripcion *" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500/50 outline-none resize-none" />
+              {formError && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">{formError}</p>}
               <div className="flex gap-2">
                 <button onClick={handleCreate} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm transition-all">Guardar</button>
-                <button onClick={() => { setShowForm(false); setForm(emptyForm); }} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm transition-all">Cancelar</button>
+                <button onClick={() => { setShowForm(false); setForm(emptyForm); setFormError(""); }} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm transition-all">Cancelar</button>
               </div>
             </div>
           )}
